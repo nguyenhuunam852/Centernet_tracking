@@ -11,7 +11,7 @@ from centernet import centernet_detection
 from deep_sort import *
 
 PATH_TO_CFG = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\pipeline.config'
-PATH_TO_CKPT = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\centernet\ckpt-28'
+PATH_TO_CKPT = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\CenterNet-8242021-141\ckpt-26'
 PATH_TO_LABELS = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\label_map.txt'
 PATH_TO_Model = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\networks\mars-small128.pb'
 
@@ -23,11 +23,11 @@ def get_mask(filename):
 
 
 if __name__ == '__main__':
+    import time
     detector = centernet_detection(PATH_TO_CFG, PATH_TO_CKPT, PATH_TO_LABELS)
     deepsort = deepsort_rbc(PATH_TO_Model)
-
     cap = cv2.VideoCapture(
-        r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\test.mp4')
+        'production ID_4750076.mp4')
 
     cv2.namedWindow('frame', 0)
     cv2.resizeWindow('frame', 1024, 600)
@@ -43,7 +43,9 @@ if __name__ == '__main__':
             break
         height, width, _ = frame.shape
 
+        start_time = time.time()
         out_scores, classes, detections = detector.predict(frame)
+        print("1.--- %s seconds ---" % (time.time() - start_time))
 
         if detections is None:
             print("No dets")
@@ -64,16 +66,18 @@ if __name__ == '__main__':
         ymax = np.reshape(ymax, (20, 1))
 
         detections = np.concatenate((xmin, ymin, xmax, ymax), axis=1)
-
+        start_time = time.time()
         tracker, detections_class = deepsort.run_deep_sort(
             frame, out_scores, detections)
+        print("2.--- %s seconds ---" % (time.time() - start_time))
 
+        start_time = time.time()
         for track in tracker.tracks:
             if not track.is_confirmed() or track.time_since_update > 1:
                 continue
             bbox = track.to_tlbr()
             id_num = str(track.track_id)
-            # Get the feature vector corresponding to the detection.
+
             features = track.features
 
             cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
@@ -87,6 +91,7 @@ if __name__ == '__main__':
                 bbox = det.to_tlbr()
                 cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
                     bbox[2]), int(bbox[3])), (255, 255, 0), 2)
+        print("3.--- %s seconds ---" % (time.time() - start_time))
 
         frame = cv2.resize(frame, (1024, 600))
         cv2.imshow('frame', frame)

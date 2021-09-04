@@ -23,9 +23,11 @@ class centernet_detection():
         self.detection_model = self.load_model()
 
     def detect_fn(self, image):
-        image, shapes = self.detection_model.preprocess(image)
-        prediction_dict = self.detection_model.predict(image, shapes)
-        detections = self.detection_model.postprocess(prediction_dict, shapes)
+        with tf.device('/GPU:1'):
+            image, shapes = self.detection_model.preprocess(image)
+            prediction_dict = self.detection_model.predict(image, shapes)
+            detections = self.detection_model.postprocess(
+                prediction_dict, shapes)
         return detections
 
     def load_model(self):

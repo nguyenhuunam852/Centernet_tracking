@@ -48,18 +48,19 @@ def _run_in_batches(f, data_dict, out, batch_size):
 class ImageEncoder(object):
     def __init__(self, checkpoint_filename, input_name="images",
                  output_name="features"):
-        self.session = tf.compat.v1.Session()
+        self.session = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(
+            allow_soft_placement=True, log_device_placement=True))
 
         with tf.compat.v1.gfile.GFile(checkpoint_filename, "rb") as file_handle:
             graph_def = tf.compat.v1.GraphDef()
             graph_def.ParseFromString(file_handle.read())
 
-        tf.import_graph_def(graph_def, name="net")
-        test = [n.name for n in tf.compat.v1.get_default_graph().as_graph_def().node]
-        self.input_var = tf.compat.v1.get_default_graph().get_tensor_by_name(
-            "%s:0" % input_name)
-        self.output_var = tf.compat.v1.get_default_graph().get_tensor_by_name(
-            "%s:0" % output_name)
+        with tf.device('/GPU:0'):
+            tf.import_graph_def(graph_def, name="net")
+            self.input_var = tf.compat.v1.get_default_graph().get_tensor_by_name(
+                "%s:0" % input_name)
+            self.output_var = tf.compat.v1.get_default_graph().get_tensor_by_name(
+                "%s:0" % output_name)
 
         assert len(self.output_var.get_shape()) == 2
         assert len(self.input_var.get_shape()) == 4
@@ -109,7 +110,8 @@ class deepsort_rbc():
             return trackers
 
         detections = np.array(out_boxes)
-        features = self.encoder(frame, detections, out_scores)
+        with tf.device('/GPU:0'):
+            features = self.encoder(frame, detections, out_scores)
 
         dets = [Detection(bbox, score, feature) for bbox, score,
                 feature in zip(detections, out_scores, features)]

@@ -27,7 +27,7 @@ if __name__ == '__main__':
     detector = centernet_detection(PATH_TO_CFG, PATH_TO_CKPT, PATH_TO_LABELS)
     deepsort = deepsort_rbc(PATH_TO_Model)
     cap = cv2.VideoCapture(
-        'production ID_4750076.mp4')
+        'Video/Pier Park Panama City_ Hour of Watching People Walk By.mp4')
 
     cv2.namedWindow('frame', 0)
     cv2.resizeWindow('frame', 1024, 600)

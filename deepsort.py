@@ -2,14 +2,11 @@ from scipy.stats import multivariate_normal
 from deep_sort.deep_sort import nn_matching
 from deep_sort.deep_sort.tracker import Tracker
 from deep_sort.application_util import preprocessing as prep
-from deep_sort.application_util import visualization
 from deep_sort.deep_sort.detection import Detection
 import tensorflow as tf
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import errno
-import os
 
 
 def extract_image_patch(image, bbox, patch_shape):
@@ -110,6 +107,7 @@ class deepsort_rbc():
             return trackers
 
         detections = np.array(out_boxes)
+
         with tf.device('/GPU:0'):
             features = self.encoder(frame, detections, out_scores)
 

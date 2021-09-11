@@ -12,6 +12,21 @@ start_time = time.time()
 with tf.device('/GPU:1'):
     faces = face_locations(img)
 
+
 print("--- %s seconds ---" % (time.time() - start_time))
+
+
+start_time = time.time()
+
+faces = face_locations(img)
+
+print("--- %s seconds ---" % (time.time() - start_time))
+
+start_time = time.time()
+
+faces = face_locations(img)
+
+print("--- %s seconds ---" % (time.time() - start_time))
+
 
 # %%

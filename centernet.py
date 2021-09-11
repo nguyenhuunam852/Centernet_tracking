@@ -24,8 +24,7 @@ class centernet_detection():
 
     def detect_fn(self, image):
         image, shapes = self.detection_model.preprocess(image)
-        with tf.device('/GPU:0'):
-            prediction_dict = self.detection_model.predict(image, shapes)
+        prediction_dict = self.detection_model.predict(image, shapes)
         detections = self.detection_model.postprocess(
             prediction_dict, shapes)
         return detections
@@ -52,6 +51,16 @@ class centernet_detection():
         detections['num_detections'] = num_detections
         detections['detection_classes'] = detections['detection_classes'].astype(
             np.int64)
+        detection_scores = detections['detection_scores']
+        detection_classes = detections['detection_classes']
+        detection_boxes = detections['detection_boxes']
+
+        return detection_scores, detection_classes, detection_boxes
+
+    def face_predict(self, image):
+        image = tf.convert_to_tensor(image, dtype=tf.float32)
+        detections = self.detect_fn(image)
+
         detection_scores = detections['detection_scores']
         detection_classes = detections['detection_classes']
         detection_boxes = detections['detection_boxes']

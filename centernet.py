@@ -58,6 +58,8 @@ class centernet_detection():
         return detection_scores, detection_classes, detection_boxes
 
     def face_predict(self, image):
+        if(len(image) == 0):
+            return None, None, None
         image = tf.convert_to_tensor(image, dtype=tf.float32)
         detections = self.detect_fn(image)
 

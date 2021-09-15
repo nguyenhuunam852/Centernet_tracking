@@ -118,6 +118,7 @@ class deepsort_rbc():
         outscores = np.array([d.confidence for d in dets])
 
         indices = prep.non_max_suppression(outboxes, 0.8, outscores)
+
         dets = [dets[i] for i in indices]
         self.tracker.predict()
         self.tracker.update(dets)

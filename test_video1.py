@@ -6,6 +6,11 @@ from deep_sort import *
 from random import randint
 from random import seed
 import os
+from glob import glob
+from face_recognition import face_locations
+import threading
+import re
+import shutil
 
 PATH_TO_CFG = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\pipeline.config'
 PATH_TO_CKPT = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\CenterNet-8242021-141\ckpt-26'
@@ -30,11 +35,31 @@ class Person:
         self.id = id
 
 
-if __name__ == '__main__':
+def _image_read(image_path):
+    image = cv2.imread(image_path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image
+
+
+def _extract_face(image, bbox, face_scale_thres=(20, 20)):
+    h, w = image.shape[:2]
+    try:
+        (startY, startX, endY, endX) = bbox
+    except:
+        return None
+    minX, maxX = min(startX, endX), max(startX, endX)
+    minY, maxY = min(startY, endY), max(startY, endY)
+    face = image[minY:maxY, minX:maxX].copy()
+    (fH, fW) = face.shape[:2]
+    if fW < face_scale_thres[0] or fH < face_scale_thres[1]:
+        return None
+    else:
+        return face
+
+
+def camera_monitor():
     import time
     detector = centernet_detection(PATH_TO_CFG, PATH_TO_CKPT, PATH_TO_LABELS)
-    face_detector = centernet_detection(
-        PATH_TO_CFG, PATH_TO_CKPT_FACE, PATH_TO_LABELS)
     deepsort = deepsort_rbc(PATH_TO_Model)
     cap = cv2.VideoCapture(
         'Video/Pier Park Panama City_ Hour of Watching People Walk By.mp4')
@@ -56,34 +81,6 @@ if __name__ == '__main__':
         if ret is False:
             frame_id += 1
             break
-        # elif (frame_id == 4):
-        #     frame_id = 0
-        #     if(len(persons) == 0):
-        #         continue
-        #     list_image = []
-        #     for person in persons:
-        #         image = cv2.resize(person.body, (512, 512))
-        #         list_image.append(image)
-
-        #     list_image = np.array(list_image)
-        #     out_scores, classes, detections = face_detector.face_predict(
-        #         list_image)
-
-        #     detections = np.array(detections)
-        #     i = 0
-        #     for image, score, detection in zip(list_image, out_scores, detections):
-        #         for bbox, con in zip(detection, score):
-        #             if(con > 0.4):
-        #                 bbox[1] = bbox[1]*image.shape[0]
-        #                 bbox[0] = bbox[0]*image.shape[1]
-        #                 bbox[3] = bbox[3]*image.shape[1]
-        #                 bbox[2] = bbox[2]*image.shape[0]
-
-        #                 face = image[int(bbox[1]):int(bbox[3]),
-        #                              int(bbox[0]):int(bbox[2])]
-        #                 cv2.imwrite("test/frame{0}.jpg".format(str(i)), face)
-        #                 i += 1
-
         elif(frame_id == 3):
             frame_id = 0
             height, width, _ = frame.shape
@@ -119,8 +116,6 @@ if __name__ == '__main__':
                 bbox = track.to_tlbr()
                 id_num = str(track.track_id)
 
-                features = track.features
-
                 body = frame[int(bbox[1]):int(bbox[3]),
                              int(bbox[0]):int(bbox[2])]
 
@@ -128,14 +123,11 @@ if __name__ == '__main__':
                     try:
                         newperson = next(
                             (x for x in persons if x.id == id_num), None)
-
-                        if not os.path.exists("test/{0}".format(str(id_num), str(id_num), str(randint(0, 1000)))):
+                        if not os.path.exists("test/{0}".format(str(id_num))):
                             os.makedirs(
-                                "test/{0}".format(str(id_num), str(id_num), str(randint(0, 1000))))
-
-                        face = cv2.imwrite(
+                                "test/{0}".format(str(id_num)))
+                        cv2.imwrite(
                             "test/{0}/frame{1}-{2}.jpg".format(str(id_num), str(id_num), str(randint(0, 1000))), newperson.body)
-
                         newperson.body = body
                     except Exception as e:
                         print(e)
@@ -164,3 +156,39 @@ if __name__ == '__main__':
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
+
+def get_face():
+    while True:
+        list_foler = glob("./test/*")
+        if(len(list_foler) == 0):
+            continue
+        foler = list_foler.pop(0)
+        foldername = foler.split('\\')[1]
+        list_image1 = glob(foler+"/*.jpg")
+        try:
+            for item in list_image1:
+                image = _image_read(item)
+                bboxs = face_locations(image)
+                if(len(bboxs) == 0):
+                    continue
+                bbox = bboxs[0]
+                face = _extract_face(image, bbox)
+                directory = "./faces/{0}".format(foldername)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                cv2.imwrite(
+                    "./faces/{0}/{1}.jpg".format(foldername, randint(0, 1000)), face)
+            shutil.rmtree(foler, ignore_errors=True)
+
+        except Exception as e:
+            print(e)
+
+
+if __name__ == '__main__':
+    t1 = threading.Thread(target=camera_monitor, args=())
+    t2 = threading.Thread(target=get_face, args=())
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()

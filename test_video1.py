@@ -2,14 +2,12 @@ from deepsort import deepsort_rbc
 import numpy as np
 import cv2
 from centernet import centernet_detection
-from deep_sort import *
 from random import randint
 from random import seed
 import os
 from glob import glob
 from face_recognition import face_locations
 import threading
-import re
 import shutil
 
 PATH_TO_CFG = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\pipeline.config'
@@ -29,10 +27,10 @@ def get_mask(filename):
 
 
 class Person:
-    def __init__(self, body, id):
+    def __init__(self, body, Id):
         self.apearance = 0
         self.body = body
-        self.id = id
+        self.id = Id
 
 
 def _image_read(image_path):
@@ -42,10 +40,10 @@ def _image_read(image_path):
 
 
 def _extract_face(image, bbox, face_scale_thres=(20, 20)):
-    h, w = image.shape[:2]
     try:
         (startY, startX, endY, endX) = bbox
-    except:
+    except Exception as ex:
+        print(ex)
         return None
     minX, maxX = min(startX, endX), max(startX, endX)
     minY, maxY = min(startY, endY), max(startY, endY)
@@ -60,7 +58,7 @@ def _extract_face(image, bbox, face_scale_thres=(20, 20)):
 def camera_monitor():
     import time
     detector = centernet_detection(PATH_TO_CFG, PATH_TO_CKPT, PATH_TO_LABELS)
-    deepsort = deepsort_rbc(PATH_TO_Model)
+    deep_sort = deepsort_rbc(PATH_TO_Model)
     cap = cv2.VideoCapture(
         'Video/Pier Park Panama City_ Hour of Watching People Walk By.mp4')
 
@@ -70,7 +68,7 @@ def camera_monitor():
     persons = []
     frame_id = 1
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('centernet_out_3.avi', fourcc, 20.0, (512, 512))
+    out = cv2.VideoWriter('Centernet_out_3.avi', fourcc, 20.0, (512, 512))
     prev_time = 0
     while True:
         start_time = time.time()
@@ -81,7 +79,7 @@ def camera_monitor():
         if ret is False:
             frame_id += 1
             break
-        elif(frame_id == 3):
+        elif frame_id == 3:
             frame_id = 0
             height, width, _ = frame.shape
 
@@ -94,19 +92,19 @@ def camera_monitor():
             detections = np.array(detections)
             out_scores = np.array(out_scores)
 
-            ymin = height*detections[:, 0]
-            xmin = width*detections[:, 1]
-            ymax = height*detections[:, 2] - ymin
-            xmax = width*detections[:, 3] - xmin
+            y_min = height*detections[:, 0]
+            x_min = width*detections[:, 1]
+            y_max = height*detections[:, 2] - y_min
+            x_max = width*detections[:, 3] - x_min
 
-            ymin = np.reshape(ymin, (20, 1))
-            xmin = np.reshape(xmin, (20, 1))
-            xmax = np.reshape(xmax, (20, 1))
-            ymax = np.reshape(ymax, (20, 1))
+            y_min = np.reshape(y_min, (20, 1))
+            x_min = np.reshape(x_min, (20, 1))
+            x_max = np.reshape(x_max, (20, 1))
+            y_max = np.reshape(y_max, (20, 1))
 
-            detections = np.concatenate((xmin, ymin, xmax, ymax), axis=1)
+            detections = np.concatenate((x_min, y_min, x_max, y_max), axis=1)
 
-            tracker, detections_class = deepsort.run_deep_sort(
+            tracker, detections_class = deep_sort.run_deep_sort(
                 frame, out_scores, detections)
 
             for track in tracker.tracks:
@@ -119,21 +117,22 @@ def camera_monitor():
                 body = frame[int(bbox[1]):int(bbox[3]),
                              int(bbox[0]):int(bbox[2])]
 
-                if(any(x.id == id_num for x in persons)):
+                if any(x.id == id_num for x in persons):
                     try:
-                        newperson = next(
+                        new_person = next(
                             (x for x in persons if x.id == id_num), None)
                         if not os.path.exists("test/{0}".format(str(id_num))):
                             os.makedirs(
                                 "test/{0}".format(str(id_num)))
                         cv2.imwrite(
-                            "test/{0}/frame{1}-{2}.jpg".format(str(id_num), str(id_num), str(randint(0, 1000))), newperson.body)
-                        newperson.body = body
+                            "test/{0}/frame{1}-{2}.jpg".format(str(id_num)
+                                                               , str(id_num), str(randint(0, 1000))), new_person.body)
+                        new_person.body = body
                     except Exception as e:
                         print(e)
                 else:
-                    newperson = Person(body, id_num)
-                    persons.append(newperson)
+                    new_person = Person(body, id_num)
+                    persons.append(new_person)
 
                 cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
                     bbox[2]), int(bbox[3])), (255, 255, 255), 2)
@@ -160,27 +159,26 @@ def camera_monitor():
 
 def get_face():
     while True:
-        list_foler = glob("./test/*")
-        if(len(list_foler) == 0):
+        list_folder = glob("./test/*")
+        if len(list_folder) == 0:
             continue
-        foler = list_foler.pop(0)
-        foldername = foler.split('\\')[1]
-        list_image1 = glob(foler+"/*.jpg")
+        folder = list_folder.pop(0)
+        folder_name = folder.split('\\')[1]
+        list_image1 = glob(folder+"/*.jpg")
         try:
             for item in list_image1:
                 image = _image_read(item)
-                bboxs = face_locations(image)
-                if(len(bboxs) == 0):
+                boxes = face_locations(image)
+                if len(boxes) == 0:
                     continue
-                bbox = bboxs[0]
+                bbox = boxes[0]
                 face = _extract_face(image, bbox)
-                directory = "./faces/{0}".format(foldername)
+                directory = "./faces/{0}".format(folder_name)
                 if not os.path.exists(directory):
                     os.makedirs(directory)
                 cv2.imwrite(
-                    "./faces/{0}/{1}.jpg".format(foldername, randint(0, 1000)), face)
-            shutil.rmtree(foler, ignore_errors=True)
-
+                    "./faces/{0}/{1}.jpg".format(folder_name, randint(0, 1000)), face)
+            shutil.rmtree(folder, ignore_errors=True)
         except Exception as e:
             print(e)
 

@@ -7,13 +7,23 @@ import cv2
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 import numpy as np
 from centernet import centernet_detection
+from deepsort import deepsort_rbc
+import time
+
+import keras
+import keras.api
+import keras.api._v1
+import keras.api._v2
+import keras.engine.base_layer_v1
 
 PATH_TO_CFG = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\pipeline.config'
 PATH_TO_CKPT = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\CenterNet-8242021-141\ckpt-26'
 PATH_TO_CKPT_FACE = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\Centernet-992021-1129-faces\ckpt-17'
 PATH_TO_LABELS = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\label_map.txt'
+PATH_TO_Model = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\networks\mars-small128.pb'
 
 detector = centernet_detection(PATH_TO_CFG, PATH_TO_CKPT, PATH_TO_LABELS)
+deep_sort = deepsort_rbc(PATH_TO_Model)
 
 
 class VideoThread(QThread):
@@ -25,8 +35,14 @@ class VideoThread(QThread):
 
     def run(self):
         frame_id = 1
-        cap = cv2.VideoCapture(r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\Video\test.mp4')
+        cap = cv2.VideoCapture(
+            r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\Video\Pier Park Panama City_ Hour of Watching People Walk By.mp4')
+        prev_time = 0
         while self._run_flag:
+            start_time = time.time()
+            fps = 1 / (start_time - prev_time)
+            prev_time = start_time
+
             ret, cv_img = cap.read()
             if ret is False:
                 frame_id += 1
@@ -42,13 +58,36 @@ class VideoThread(QThread):
                     detections = np.array(detections)
                     out_scores = np.array(out_scores)
 
-                    for index, det in enumerate(detections):
-                        y_min = height * det[0]
-                        x_min = width * det[1]
-                        y_max = height * det[2]
-                        x_max = width * det[3]
-                        if out_scores[index] > 0.5:
-                            cv2.rectangle(cv_img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (255, 255, 0), 2)
+                    y_min = height * detections[:, 0]
+                    x_min = width * detections[:, 1]
+                    y_max = height * detections[:, 2] - y_min
+                    x_max = width * detections[:, 3] - x_min
+
+                    y_min = np.reshape(y_min, (20, 1))
+                    x_min = np.reshape(x_min, (20, 1))
+                    x_max = np.reshape(x_max, (20, 1))
+                    y_max = np.reshape(y_max, (20, 1))
+
+                    detections = np.concatenate((x_min, y_min, x_max, y_max), axis=1)
+
+                    tracker, detections_class = deep_sort.run_deep_sort(
+                        cv_img, out_scores, detections)
+
+                    for track in tracker.tracks:
+                        if not track.is_confirmed() or track.time_since_update > 1:
+                            continue
+
+                        bbox = track.to_tlbr()
+                        id_num = str(track.track_id)
+
+                        cv2.rectangle(cv_img, (int(bbox[0]), int(bbox[1])), (int(
+                            bbox[2]), int(bbox[3])), (255, 255, 255), 2)
+
+                        cv2.putText(cv_img, str(id_num), (int(bbox[0]), int(
+                            bbox[1])), 0, 5e-3 * 200, (0, 255, 0), 2)
+
+                    cv2.putText(cv_img, str(int(fps)), (7, 70), cv2.FONT_HERSHEY_SIMPLEX, 3,
+                                (100, 255, 0), 3, cv2.LINE_AA)
 
                     cv_img = cv2.resize(cv_img, (512, 512))
                     self.change_pixmap_signal.emit(cv_img)

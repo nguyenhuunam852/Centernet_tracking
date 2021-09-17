@@ -28,9 +28,8 @@ class Person:
 
 
 if __name__ == '__main__':
-    import time
     detector = centernet_detection(PATH_TO_CFG, PATH_TO_CKPT, PATH_TO_LABELS)
-    deepsort = deepsort_rbc(PATH_TO_Model)
+
     cap = cv2.VideoCapture(
         'Video/Pier Park Panama City_ Hour of Watching People Walk By.mp4')
 
@@ -46,61 +45,22 @@ if __name__ == '__main__':
         if ret is False:
             frame_id += 1
             break
-        if(frame_id == 1):
+        if(frame_id == 3):
+            frame_id = 0
             height, width, _ = frame.shape
-
-            start_time = time.time()
-            out_scores, classes, detections = detector.predict(frame)
-
-            if detections is None:
-                print("No dets")
-                frame_id += 1
-                continue
-
-            detections = np.array(detections)
-            out_scores = np.array(out_scores)
-
-            ymin = height*detections[:, 0]  # ymin
-            xmin = width*detections[:, 1]  # xmin
-            ymax = height*detections[:, 2] - ymin  # ymax
-            xmax = width*detections[:, 3] - xmin  # xmax
-
-            ymin = np.reshape(ymin, (20, 1))  # ymin
-            xmin = np.reshape(xmin, (20, 1))   # xmin
-            xmax = np.reshape(xmax, (20, 1))
-            ymax = np.reshape(ymax, (20, 1))
-
-            detections = np.concatenate((xmin, ymin, xmax, ymax), axis=1)
-
-            tracker, detections_class = deepsort.run_deep_sort(
-                frame, out_scores, detections)
-
-            if(detections_class != None):
-                for track in tracker.tracks:
-                    if not track.is_confirmed() or track.time_since_update > 1:
-                        continue
-                    bbox = track.to_tlbr()
-                    id_num = str(track.track_id)
-
-                    id_x = track.mean[0]
-                    features = track.features
-
-                    person = frame[int(bbox[1]):int(bbox[3]),
-                                   int(bbox[0]):int(bbox[2])]
-
-                    # faces = face_locations(person)
-                    # if(faces != []):
-                    # face = _extract_face(person, faces)
-                    # cv2.imwrite("test/frame%d.jpg" %
-                    #             int(id_num), person)
-
-                    cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
-                        bbox[2]), int(bbox[3])), (255, 255, 255), 2)
-
-                    cv2.putText(frame, str(id_num), (int(bbox[0]), int(
-                        bbox[1])), 0, 5e-3 * 200, (0, 255, 0), 2)
-
             frame = cv2.resize(frame, (512, 512))
+            detection_scores, detection_classes, detection_boxes = detector.predict(
+                frame)
+            for index, face in enumerate(detection_boxes):
+                face = np.array(face)
+                if(detection_scores[index] > 0.6):
+                    y_min = 512*face[0]
+                    x_min = 512*face[1]
+                    y_max = 512*face[2]
+                    x_max = 512*face[3]
+                    cv2.rectangle(frame, (int(x_min), int(y_min)), (int(
+                        x_max), int(y_max)), (255, 255, 255), 2)
+
             cv2.imshow('frame', frame)
             out.write(frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):

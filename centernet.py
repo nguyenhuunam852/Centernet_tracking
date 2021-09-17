@@ -1,13 +1,8 @@
-from re import L
 from object_detection.utils import label_map_util
 from object_detection.utils import config_util
-from object_detection.utils import visualization_utils as viz_utils
 from object_detection.builders import model_builder
 import tensorflow as tf
-import os
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -58,7 +53,7 @@ class centernet_detection():
         return detection_scores, detection_classes, detection_boxes
 
     def face_predict(self, image):
-        if(len(image) == 0):
+        if len(image) == 0:
             return None, None, None
         image = tf.convert_to_tensor(image, dtype=tf.float32)
         detections = self.detect_fn(image)

@@ -9,6 +9,7 @@ from glob import glob
 from face_recognition import face_locations
 import threading
 import shutil
+from pathlib import Path
 
 PATH_TO_CFG = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\pipeline.config'
 PATH_TO_CKPT = r'D:\train2017\KhoaLuanTotNghiep\Person_tracking_centernet\CenterNet-8242021-141\ckpt-26'
@@ -125,8 +126,7 @@ def camera_monitor():
                             os.makedirs(
                                 "test/{0}".format(str(id_num)))
                         cv2.imwrite(
-                            "test/{0}/frame{1}-{2}.jpg".format(str(id_num)
-                                                               , str(id_num), str(randint(0, 1000))), new_person.body)
+                            "test/{0}/frame{1}-{2}.jpg".format(str(id_num), str(id_num), str(randint(0, 1000))), new_person.body)
                         new_person.body = body
                     except Exception as e:
                         print(e)
@@ -159,10 +159,11 @@ def camera_monitor():
 
 def get_face():
     while True:
-        list_folder = glob("./test/*")
+        list_folder = sorted(Path('./test/').iterdir(), key=os.path.getmtime)
         if len(list_folder) == 0:
             continue
         folder = list_folder.pop(0)
+        folder = str(folder)
         folder_name = folder.split('\\')[1]
         list_image1 = glob(folder+"/*.jpg")
         try:

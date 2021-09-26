@@ -45,7 +45,7 @@ if __name__ == '__main__':
         if ret is False:
             frame_id += 1
             break
-        if(frame_id == 3):
+        if frame_id == 3:
             frame_id = 0
             height, width, _ = frame.shape
             frame = cv2.resize(frame, (512, 512))
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                 frame)
             for index, face in enumerate(detection_boxes):
                 face = np.array(face)
-                if(detection_scores[index] > 0.6):
+                if detection_scores[index] > 0.6:
                     y_min = 512*face[0]
                     x_min = 512*face[1]
                     y_max = 512*face[2]

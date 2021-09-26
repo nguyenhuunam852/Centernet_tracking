@@ -14,13 +14,13 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import warnings
-from mtcnn import MTCNN
+
 
 warnings.filterwarnings('ignore')
 
-PATH_TO_CFG = r'D:\train2017\KhoaLuanTotNghiep\TensorflowAPI\pipeline.config'
-PATH_TO_CKPT = r'D:\train2017\KhoaLuanTotNghiep\TensorflowAPI\Centernet-9252021-1734-faces\ckpt-173'
-PATH_TO_LABELS = r'D:\train2017\KhoaLuanTotNghiep\TensorflowAPI\label_map.txt'
+PATH_TO_CFG = 'pipeline.config'
+PATH_TO_CKPT = r'/home/nam/Desktop/Mlproject/Centernet_tracking/Centernet-9252021-1734-faces/ckpt-173'
+PATH_TO_LABELS = 'label_map.txt'
 
 
 class Detector(object):
@@ -131,8 +131,9 @@ def check_overlap(curr, li):
             return 1
     return 0
 
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('centernet_out_3.avi', fourcc, 20.0, (512, 512))
+
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+out = cv2.VideoWriter('centernet_out_3.avi', fourcc, 20.0, (512, 512))
 
 
 class CamApp:

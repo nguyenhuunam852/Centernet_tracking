@@ -186,8 +186,8 @@ def get_face():
 
 if __name__ == '__main__':
     t1 = threading.Thread(target=camera_monitor, args=())
-    t2 = threading.Thread(target=get_face, args=())
+    #t2 = threading.Thread(target=get_face, args=())
     t1.start()
-    t2.start()
+    #t2.start()
     t1.join()
-    t2.join()
+    #t2.join()

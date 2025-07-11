@@ -3,7 +3,7 @@
 ## Yo, What's This All About? 😎
 
 Welcome to **Centernet_tracking**, the coolest project for smashing object detection and tracking like a pro!  
-Built on the epic **CenterNet** architecture, this bad boy lets you detect and track objects in videos or images with ninja-level precision.
+Built on the epic **CenterNet** architecture and enhanced with **DeepSORT**, this bad boy lets you detect and track objects in videos or images with ninja-level precision.
 
 Whether you're diving into computer vision for fun, building the next big thing in surveillance, or creating something wild for autonomous systems — this repo is your ticket to greatness!
 
@@ -11,10 +11,11 @@ Whether you're diving into computer vision for fun, building the next big thing 
 
 ## 💥 Why You'll Love It
 
-- 🔥 **Next-Level Detection**: CenterNet brings the heat with fast and accurate object spotting.  
-- 🎯 **Track Like a Boss**: Follow multiple objects across frames like they're your crew.  
-- 🎨 **Make It Your Own**: Tweak it, twist it, make it fit your vibe!  
-- ⚡ **Ready-to-Roll Models**: Pre-trained models to get you started in a snap.
+- 🔍 **CenterNet Detection**: Fast and accurate object detection using keypoint-based approach  
+- 🧠 **DeepSORT Tracking**: ID-aware tracking with ReID feature embedding for better identity consistency  
+- 🎯 **Track Like a Boss**: Follow multiple objects across frames, even after occlusion  
+- 🎨 **Make It Your Own**: Easily configurable and modular for your project needs  
+- ⚡ **Ready-to-Roll Models**: Pre-trained models to get you started in a snap
 
 ---
 
@@ -22,10 +23,11 @@ Whether you're diving into computer vision for fun, building the next big thing 
 
 Make sure you’ve got the following:
 
-- 🐍 Python 3.8+ (because we’re modern like that)  
-- 🔥 PyTorch 1.7.0+ (the engine of our dreams)  
-- 🧠 OpenCV, NumPy, SciPy (the sidekicks)  
-- ⚡ CUDA (optional, for that GPU turbo boost)
+- 🐍 Python 3.8+  
+- 🔥 PyTorch 1.7.0+  
+- 🎥 OpenCV, NumPy, SciPy  
+- ⚡ CUDA (optional but recommended)  
+- 🧬 TensorFlow (for DeepSORT ReID model)  
 
 Install dependencies:
 
@@ -37,7 +39,7 @@ pip install -r requirements.txt
 
 ## 🎉 Let’s Get It Running!
 
-### 1. Grab the Code
+### 1. Clone the Repo
 
 ```bash
 git clone https://github.com/nguyenhuunam852/Centernet_tracking.git
@@ -50,109 +52,124 @@ cd Centernet_tracking
 pip install -r requirements.txt
 ```
 
-### 3. Download Pretrained Models (optional)
+### 3. Download Pretrained Models
 
 ```bash
-wget <model_url> -P models/
+# For CenterNet
+wget <centernet_model_url> -P models/
+
+# For DeepSORT (ReID model)
+wget <deepsort_reid_model_url> -P models/reid/
 ```
 
 ---
 
 ## ✨ How to Make Magic Happen
 
-### 1. Prep Your Data
+### 1. Prepare Your Data
 
-Place your images or videos in the `data/` folder.  
-Supported formats: COCO, MOT, or custom (check `configs/` for settings).
+Place your input videos or images in the `data/` folder.  
+Supported formats: MP4, JPG, PNG, etc.
 
-### 2. Track Like a Superstar
-
-Run detection and tracking on a video or image set:
+### 2. Run Detection + DeepSORT Tracking
 
 ```bash
-python main.py --mode inference --input_path data/your_video.mp4 --output_path output/
+python main.py --mode inference --input_path data/your_video.mp4 --output_path output/ --tracker deepsort
 ```
 
-### 3. Train Your Own Beast
-
-Train the model on your own dataset:
+### 3. Train CenterNet (Optional)
 
 ```bash
 python main.py --mode train --config configs/default.yaml --data_path data/your_dataset/
 ```
 
-### 4. Customize Your Ride
+### 4. Customize Settings
 
-Edit `configs/default.yaml` to:
+Edit `configs/default.yaml` to tweak:
 
-- Pick your model type  
-- Set input resolution  
-- Choose tracking algorithm (`IOU`, `Kalman`, etc.)  
-- Adjust batch size, learning rate, and more
+- Model type (CenterNet variant)
+- Input size
+- Tracking algorithm: `deepsort`, `kalman`, or `iou`
+- ReID model path
+- Batch size, learning rate, etc.
+
+---
+
+## 🎯 About DeepSORT Integration
+
+This project integrates **DeepSORT** for improved object tracking performance.  
+Unlike basic IOU/Kalman tracking, DeepSORT uses ReID embeddings to help maintain consistent identities across occlusions and long durations.
+
+### DeepSORT Pipeline:
+
+- Appearance embeddings using a ReID model (usually ResNet-based)
+- Kalman filter + Hungarian algorithm for motion + visual matching
+- ID assignment that resists ID-switching
+
+> 📁 Place your ReID model in: `models/reid/`
 
 ---
 
 ## 🔥 Try This Out!
 
 ```bash
-# Track objects in a sample video
-python main.py --mode inference --input_path data/sample_video.mp4 --output_path output/tracked_video.mp4
+python main.py --mode inference --input_path data/sample_video.mp4 --output_path output/tracked_sample.mp4 --tracker deepsort
 ```
 
 ---
 
 ## 🎥 What You’ll Get
 
-Your tracked videos or annotated images will land in the `output/` folder,  
-complete with slick bounding boxes and tracking IDs.
-
-Show off your masterpiece! 🧠💻
+- Output video with bounding boxes + tracking IDs
+- Results saved to the `output/` folder
+- Logs/statistics optionally printed or saved
 
 ---
 
 ## 📦 Pre-trained Models
 
-Pre-trained models coming soon — stay tuned!  
-Place downloaded weights into the `models/` folder.
+Pre-trained models for detection and DeepSORT coming soon — stay tuned!  
+Place `.pth` and `.ckpt` files into:
+
+```
+models/
+├── centernet.pth
+└── reid/
+    └── deepsort.ckpt
+```
 
 ---
 
-## 🙌 Join the Squad!
+## 🙌 Contributing
 
-Wanna make this project even more awesome? Here’s how to contribute:
+Want to improve this project?
 
-1. Fork this repo like it’s hot 🔥  
-2. Create a new branch:  
-   ```bash
-   git checkout -b my-cool-feature
-   ```
-3. Commit your changes:  
-   ```bash
-   git commit -m "Added some epic sauce"
-   ```
-4. Push it up:  
-   ```bash
-   git push origin my-cool-feature
-   ```
-5. Open a Pull Request. Let’s make waves together 🌊
+1. Fork the repo  
+2. Create a branch: `git checkout -b my-feature`  
+3. Commit changes: `git commit -m "Added awesome stuff"`  
+4. Push it: `git push origin my-feature`  
+5. Submit a pull request 🚀
 
 ---
 
 ## 📄 License
 
-This project is rocking the **MIT License**.  
-See the `LICENSE` file for all the legal stuff.
+This project is licensed under the **MIT License**.  
+See the `LICENSE` file for more details.
 
 ---
 
-## 🌟 Big Thanks!
+## 🌟 Acknowledgments
 
-- Shoutout to **CenterNet: Objects as Points** for the inspo.  
-- Big love to the open-source community for tools & datasets that power this project.
+- 📌 [CenterNet: Objects as Points](https://arxiv.org/abs/1904.07850)  
+- 📌 [DeepSORT](https://arxiv.org/abs/1703.07402)  
+- 🙏 Thanks to the open-source community for making this possible!
 
 ---
 
-## 💬 Got Questions? Let’s Chat!
+## 💬 Contact
 
-Open an issue on GitHub or DM [nguyenhuunam852](https://github.com/nguyenhuunam852).  
-Let’s build something legendary together! 🚀
+Have a question or suggestion?  
+Open an issue or reach out at [github.com/nguyenhuunam852](https://github.com/nguyenhuunam852)
+
+Let’s build something legendary together! ✨

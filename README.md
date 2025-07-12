@@ -164,7 +164,7 @@ See the `LICENSE` file for more details.
 - 📌 [CenterNet: Objects as Points](https://arxiv.org/abs/1904.07850)  
 - 📌 [DeepSORT](https://arxiv.org/abs/1703.07402)  
 - 🙏 Thanks to the open-source community for making this possible!
-
+- Youtube Demo: https://youtu.be/OjmT_atgNTM
 ---
 
 ## 💬 Contact
